@@ -1,0 +1,83 @@
+<h1>Posts</h1>
+
+<% if @post.present? %>
+	<%= form_for(@post, url: posts_path, class: "form") do |f| %>
+	  <div class="field form-group">
+	    <%= f.label :text %><br />
+	    <%= f.rich_text_area :text, autofocus: true, placeholder: "Add Post", class: "form-control" %>
+	    <%= f.radio_button :is_private, true, :checked => true %> 
+		  <%= label :contactmethod_email, 'Private' %>
+		  <%= f.radio_button :is_private, false %>
+		  <%= label :contactmethod_sms, 'Public' %>
+	  </div>
+	  <div class="actions">
+	    <%= f.submit "Post" %>
+	  </div>
+	<% end %>
+<% end %>
+<br/>
+<br/>
+
+<h3>Recent Posts </h3>
+
+<div>
+	<% @posts.each do |post| %>
+		<div class="row">
+			<h4><b><%= post.text %></b></h4>
+			<i>posted by : <%= post.user.name %></i>
+			<br/>
+			<button data-toggle="collapse" data-target="#comments_<%= post.id %>">comments</button>
+			<div id="comments_<%= post.id %>" class="collapse">
+				<div class="comment-form">
+					<h4><b> Comments :</b></h4>
+					<% post.comments.each do |comment| %>
+						<br/>
+						<div class="row">
+							<b><%= comment.content %></b><span><i>commented by : <%= (comment&.user&.name || comment&.guest&.name)%></i></span>
+						</div>
+						<br/><br/>
+						<div class="reply-box">
+							<b>Replies</b>
+							<div class="replies">
+								<% comment.replies.each do |reply| %>
+									<%= reply.content %> <i>replied by : <%= reply&.user&.name %></i>
+								<% end %>
+							</div>
+							<% if user_signed_in? %>
+								<div class="reply-box">
+									<%= form_for(comment.replies.new, url: create_reply_post_comment_path(post, comment), class: "form") do |f| %>
+										<div class="row">
+										  <div class="col-md-10 field form-group">
+										    <%= f.text_field :content, autofocus: true, placeholder: "reply", class: "form-control", id: "reply_#{comment.id}" %>
+						            <%= f.hidden_field :user_id, value: current_user&.id %>
+	        							<%= f.hidden_field :main_comment_id, value: post&.id %>
+										  </div>
+										  <div class="col-md-2">
+										    <%= f.submit "reply" %>
+										  </div>
+										</div>
+									<% end %>
+								</div>
+							<% end %>
+						</div>
+					<% end %>
+				</div>
+				<div class="comment-form">
+					<%= form_for(post.comments.new, url: post_comments_path(post), class: "form") do |f| %>
+					  <div class="field form-group">
+					    <%= f.rich_text_area :content, autofocus: true, placeholder: "add comment", class: "form-control", id: "comment_#{post.id}" %>
+	            <%= f.hidden_field :user_id, value: current_user&.id %>
+					  </div>
+					  <% unless user_signed_in? %>
+					  	<p>Please <%= link_to('Sign-in', new_user_session_path) %> or add you name <%= f.text_field :guest_name, required: true  %> to comment on this post. </p>
+					  <% end %>
+					  <div class="actions">
+					    <%= f.submit "comment" %>
+					  </div>
+					<% end %>
+				</div>
+			</div>
+		</div>
+		<br/>
+	<% end %>
+</div>
